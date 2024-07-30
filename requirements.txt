@@ -1,4 +1,6 @@
-auto_mix_prep==0.2.0
 dask==2024.5.0
-polars==0.20.26
-tqdm==4.65.0
+polars==0.20.28
+python-dotenv==1.0.1
+Requests==2.32.2
+SPARQLWrapper==2.0.0
+tqdm==4.66.4

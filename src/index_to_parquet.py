@@ -10,24 +10,25 @@ import dask.dataframe as dd
 from dask.diagnostics import ProgressBar
 ProgressBar().register()
 
-from src.read_meta import get_omids_list
+from src.read_iris_in_meta import get_omids_list
 
 
 def process_index_dump(index_path):
-    if os.path.isdir('data/index_in_iris'):
-        metaparquet_path = Path('data/iris_in_meta')
-    else:
-        raise FileNotFoundError('Please run meta_to_parquet.py first')
+    if not os.path.isdir('data/iris_in_meta'):
+        raise FileNotFoundError(f"Folder 'data/iris_in_meta' does not exist. Please create the 'iris_in_meta' dataset first")
 
     # unzip the internal archives
     if index_path.endswith('.zip'):
+        extraction_dir = index_path.replace('.zip', '')
         with ZipFile(index_path, 'r') as zip_ref:
-            zip_ref.extractall(index_path)
-        index_path = index_path.replace('.zip', '')
+            zip_ref.extractall(extraction_dir)
+        index_path = extraction_dir
 
-    file_names = [Path(index_path / archive) for archive in os.listdir(index_path)]
+    file_names = [Path(index_path) / Path(archive) for archive in os.listdir(index_path)]
 
-    omids_list = get_omids_list(metaparquet_path)
+    omids_list = get_omids_list()
+
+    output_dir = Path("data/iris_in_index")
 
     for archive in tqdm(file_names):
         zip_file = ZipFile(archive)
@@ -36,7 +37,7 @@ def process_index_dump(index_path):
 
         ddf = dd.read_csv(csvs, storage_options={'fo': zip_file.filename}, usecols=['id', 'citing', 'cited'])
         ddf = ddf[ddf['cited'].isin(omids_list) | ddf['citing'].isin(omids_list)]
-        ddf.to_parquet('data/index_in_iris/' + zip_file.filename + '.parquet', write_index=False)
+        ddf.to_parquet(output_dir / archive.stem, write_index=False)
 
 
 
